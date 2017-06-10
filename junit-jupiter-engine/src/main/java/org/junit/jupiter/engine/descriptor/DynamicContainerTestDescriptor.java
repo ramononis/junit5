@@ -37,6 +37,11 @@ class DynamicContainerTestDescriptor extends JupiterTestDescriptor {
 	}
 
 	@Override
+	public boolean mayRegisterTests() {
+		return true;
+	}
+
+	@Override
 	public Type getType() {
 		return Type.CONTAINER;
 	}

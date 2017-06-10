@@ -167,6 +167,11 @@ public interface TestDescriptor {
 	Type getType();
 
 	/**
+	 * Determine of this descriptor may register dynamic tests during execution.
+	 */
+	boolean mayRegisterTests();
+
+	/**
 	 * Determine if this descriptor describes a container.
 	 *
 	 * <p>The default implementation delegates to {@link Type#isContainer()}.
@@ -182,48 +187,6 @@ public interface TestDescriptor {
 	 */
 	default boolean isTest() {
 		return getType().isTest();
-	}
-
-	/**
-	 * Determine if this descriptor or any of its descendants describes a test.
-	 *
-	 * <p>The default implementation returns {@code true} if {@link #isTest()}
-	 * returns {@code true} and otherwise recurses through this descriptor's
-	 * {@linkplain #getChildren() children} to determine if they have tests.
-	 */
-	default boolean hasTests() {
-		return isTest() || getChildren().stream().anyMatch(TestDescriptor::hasTests);
-	}
-
-	/**
-	 * Remove this descriptor from the hierarchy unless it is a root or has tests.
-	 *
-	 * <p>A concrete {@link TestEngine} may override this method in order to implement
-	 * a different algorithm or to skip pruning altogether.
-	 *
-	 * @see #isRoot()
-	 * @see #hasTests()
-	 * @see #removeFromHierarchy()
-	 */
-	default void prune() {
-		if (isRoot() || hasTests()) {
-			return;
-		}
-		removeFromHierarchy();
-	}
-
-	/**
-	 * Remove this descriptor and its descendants from the hierarchy.
-	 *
-	 * <p>The default implementation supplies the {@link #prune()} method as a
-	 * {@link Visitor} to this descriptor, thereby effectively removing this
-	 * descriptor and all of its descendants.
-	 *
-	 * @see #accept(Visitor)
-	 * @see #prune()
-	 */
-	default void pruneTree() {
-		accept(TestDescriptor::prune);
 	}
 
 	/**
