@@ -12,6 +12,8 @@ package org.junit.platform.engine;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static org.junit.platform.commons.util.StringUtils.decode;
+import static org.junit.platform.commons.util.StringUtils.encode;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -71,8 +73,8 @@ class UniqueIdFormat implements Serializable {
 		if (!segmentMatcher.matches()) {
 			throw new JUnitException(String.format("'%s' is not a well-formed UniqueId segment", segmentString));
 		}
-		String type = checkAllowed(segmentMatcher.group(1));
-		String value = checkAllowed(segmentMatcher.group(2));
+		String type = decode(checkAllowed(segmentMatcher.group(1)));
+		String value = decode(checkAllowed(segmentMatcher.group(2)));
 		return new Segment(type, value);
 	}
 
@@ -101,8 +103,8 @@ class UniqueIdFormat implements Serializable {
 	}
 
 	private String describe(Segment segment) {
-		return String.format("%s%s%s%s%s", this.openSegment, segment.getType(), this.typeValueSeparator,
-			segment.getValue(), this.closeSegment);
+		return String.format("%s%s%s%s%s", this.openSegment, encode(segment.getType()), this.typeValueSeparator,
+			encode(segment.getValue()), this.closeSegment);
 	}
 
 	private static String quote(char c) {

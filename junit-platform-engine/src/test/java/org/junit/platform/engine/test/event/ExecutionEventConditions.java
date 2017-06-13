@@ -33,6 +33,7 @@ import java.util.List;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.Condition;
 import org.assertj.core.api.SoftAssertions;
+import org.junit.platform.commons.util.StringUtils;
 import org.junit.platform.engine.TestDescriptor;
 import org.junit.platform.engine.TestExecutionResult;
 import org.junit.platform.engine.TestExecutionResult.Status;
@@ -97,7 +98,7 @@ public class ExecutionEventConditions {
 
 	public static Condition<ExecutionEvent> uniqueIdSubstring(String uniqueIdSubstring) {
 		return new Condition<>(
-			byTestDescriptor(where(testDescriptor -> testDescriptor.getUniqueId().toString(),
+			byTestDescriptor(where(testDescriptor -> StringUtils.decode(testDescriptor.getUniqueId().toString()),
 				uniqueId -> uniqueId.contains(uniqueIdSubstring))),
 			"descriptor with uniqueId substring \"%s\"", uniqueIdSubstring);
 	}

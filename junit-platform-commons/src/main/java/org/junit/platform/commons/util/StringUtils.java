@@ -12,8 +12,13 @@ package org.junit.platform.commons.util;
 
 import static org.junit.platform.commons.meta.API.Usage.Internal;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
+import org.junit.platform.commons.JUnitException;
 import org.junit.platform.commons.meta.API;
 
 /**
@@ -117,4 +122,21 @@ public final class StringUtils {
 		return obj.toString();
 	}
 
+	public static String decode(String encoded) {
+		try {
+			return URLDecoder.decode(encoded, StandardCharsets.UTF_8.name());
+		}
+		catch (UnsupportedEncodingException e) {
+			throw new JUnitException("UTF-8 not supported?", e);
+		}
+	}
+
+	public static String encode(String decoded) {
+		try {
+			return URLEncoder.encode(decoded, StandardCharsets.UTF_8.name());
+		}
+		catch (UnsupportedEncodingException e) {
+			throw new JUnitException("UTF-8 not supported?", e);
+		}
+	}
 }
