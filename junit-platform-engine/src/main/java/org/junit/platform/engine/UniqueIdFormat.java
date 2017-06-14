@@ -14,13 +14,10 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.junit.platform.commons.JUnitException;
-import org.junit.platform.commons.util.Preconditions;
 import org.junit.platform.engine.UniqueId.Segment;
 
 /**
@@ -43,15 +40,14 @@ class UniqueIdFormat implements Serializable {
 	private final char closeSegment;
 	private final char segmentDelimiter;
 	private final char typeValueSeparator;
-	private final Pattern segmentPattern;
+	private final Pattern segmentSplitter;
 
 	UniqueIdFormat(char openSegment, char typeValueSeparator, char closeSegment, char segmentDelimiter) {
 		this.openSegment = openSegment;
 		this.typeValueSeparator = typeValueSeparator;
 		this.closeSegment = closeSegment;
 		this.segmentDelimiter = segmentDelimiter;
-		this.segmentPattern = Pattern.compile(
-			String.format("%s(.+)%s(.+)%s", quote(openSegment), quote(typeValueSeparator), quote(closeSegment)));
+		this.segmentSplitter = Pattern.compile(Pattern.quote("" + closeSegment + segmentDelimiter + openSegment));
 	}
 
 	/**
@@ -61,32 +57,27 @@ class UniqueIdFormat implements Serializable {
 	 * @throws JUnitException if the string cannot be parsed
 	 */
 	UniqueId parse(String source) throws JUnitException {
-		String[] parts = source.split(String.valueOf(this.segmentDelimiter));
-		List<Segment> segments = Arrays.stream(parts).map(this::createSegment).collect(toList());
+		String trim = source.trim();
+		int lastIndex = trim.length() - 1;
+		if (trim.charAt(0) != openSegment || trim.charAt(lastIndex) != closeSegment) {
+			throw new JUnitException(String.format("'%s' is not a well-formed UniqueId", source));
+		}
+		trim = trim.substring(1, lastIndex);
+		List<Segment> segments = segmentSplitter.splitAsStream(trim).map(this::createSegment).collect(toList());
 		return new UniqueId(this, segments);
 	}
 
 	private Segment createSegment(String segmentString) throws JUnitException {
-		Matcher segmentMatcher = this.segmentPattern.matcher(segmentString);
-		if (!segmentMatcher.matches()) {
+		if (segmentString.length() < 3) {
 			throw new JUnitException(String.format("'%s' is not a well-formed UniqueId segment", segmentString));
 		}
-		String type = checkAllowed(segmentMatcher.group(1));
-		String value = checkAllowed(segmentMatcher.group(2));
+		int index = segmentString.indexOf(typeValueSeparator);
+		if (index == -1) {
+			throw new JUnitException(String.format("'%s' is not a well-formed UniqueId segment", segmentString));
+		}
+		String type = segmentString.substring(0, index);
+		String value = segmentString.substring(index + 1);
 		return new Segment(type, value);
-	}
-
-	private String checkAllowed(String typeOrValue) {
-		checkDoesNotContain(typeOrValue, this.segmentDelimiter);
-		checkDoesNotContain(typeOrValue, this.typeValueSeparator);
-		checkDoesNotContain(typeOrValue, this.openSegment);
-		checkDoesNotContain(typeOrValue, this.closeSegment);
-		return typeOrValue;
-	}
-
-	private void checkDoesNotContain(String typeOrValue, char forbiddenCharacter) {
-		Preconditions.condition(typeOrValue.indexOf(forbiddenCharacter) < 0,
-			() -> String.format("type or value '%s' must not contain '%s'", typeOrValue, forbiddenCharacter));
 	}
 
 	/**
@@ -104,9 +95,4 @@ class UniqueIdFormat implements Serializable {
 		return String.format("%s%s%s%s%s", this.openSegment, segment.getType(), this.typeValueSeparator,
 			segment.getValue(), this.closeSegment);
 	}
-
-	private static String quote(char c) {
-		return Pattern.quote(String.valueOf(c));
-	}
-
 }
